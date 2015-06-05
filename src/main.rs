@@ -27,21 +27,33 @@ fn init_gui() {
     let search_results: TreeView  = builder.get_object("search_results").unwrap();
     let results_store: ListStore = builder.get_object("search_results_store").unwrap();
 
-    search_entry.override_font(&FontDescription::from_string("gurbaniwebthick normal 12").unwrap());
+    let fullscreen_window: Window = builder.get_object("fullscreen_window").unwrap();
+    let gurmukhi_label: Label = builder.get_object("gurmukhi").unwrap();
+    let translation_label: Label = builder.get_object("translation").unwrap();
+    let transliteration_label: Label = builder.get_object("transliteration").unwrap();
+
+    let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12").unwrap();
+    gurmukhi_label.override_font(&gurmukhi_font);
+    translation_label.override_font(&gurmukhi_font);
+    transliteration_label.override_font(&gurmukhi_font);
+    search_entry.override_font(&gurmukhi_font);
 
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
         signal::Inhibit(true)
     });
 
-    search_results.connect_row_activated(|view: TreeView, path, _| {
+    search_results.connect_row_activated(move |view: TreeView, path, _| {
+        create_fullscreen_window(&fullscreen_window);
+
         let model = view.get_model().unwrap();
         let mut iter = TreeIter::new();
         if model.get_iter(&mut iter, &path) {
             let s = model.get_value(&iter, 0);
-            println!("Double clicked {}", s.get_string().unwrap());
+            gurmukhi_label.set_text(&s.get_string().unwrap());
+            translation_label.set_text(&s.get_string().unwrap());
+            transliteration_label.set_text(&s.get_string().unwrap());
         }
-
     });
     search_button.connect_clicked(move |_| search(&search_entry, &results_store));
 
@@ -60,9 +72,7 @@ fn search(_: &Entry, store: &ListStore) {
     }
 }
 
-fn create_fullscreen_window() {
-    let window = Window::new(gtk::WindowType::TopLevel).unwrap();
-
+fn create_fullscreen_window(window: &Window) {
     // This is needed for tiling window managers so the window can be positioned
     window.set_type_hint(gdk::WindowTypeHint::Dialog);
 
