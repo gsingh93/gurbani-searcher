@@ -6,7 +6,7 @@ extern crate libgurbani;
 use libgurbani::{QueryParams, Scripture};
 use pango::FontDescription;
 
-use gtk::signal;
+use gtk::signal::{self, TreeViewSignals};
 use gtk::widgets::*;
 use gtk::traits::*;
 
@@ -24,6 +24,7 @@ fn init_gui() {
     let window: Window = builder.get_object("window").unwrap();
     let search_button: Button = builder.get_object("search_button").unwrap();
     let search_entry: Entry  = builder.get_object("search_entry").unwrap();
+    let search_results: TreeView  = builder.get_object("search_results").unwrap();
     let results_store: ListStore = builder.get_object("search_results_store").unwrap();
 
     search_entry.override_font(&FontDescription::from_string("gurbaniwebthick normal 12").unwrap());
@@ -33,6 +34,15 @@ fn init_gui() {
         signal::Inhibit(true)
     });
 
+    search_results.connect_row_activated(|view: TreeView, path, _| {
+        let model = view.get_model().unwrap();
+        let mut iter = TreeIter::new();
+        if model.get_iter(&mut iter, &path) {
+            let s = model.get_value(&iter, 0);
+            println!("Double clicked {}", s.get_string().unwrap());
+        }
+
+    });
     search_button.connect_clicked(move |_| search(&search_entry, &results_store));
 
     window.show_all();
