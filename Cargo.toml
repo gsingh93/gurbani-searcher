@@ -16,6 +16,7 @@ path = "src/main.rs"
 
 [dependencies]
 rusqlite = "*"
+gdk = "*"
 
 [dependencies.pango]
 path = "../pango"

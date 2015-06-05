@@ -1,9 +1,10 @@
+extern crate gdk;
 extern crate gtk;
 extern crate pango;
 extern crate libgurbani;
 
 use libgurbani::{QueryParams, Scripture};
-use pango::widgets::FontDescription;
+use pango::FontDescription;
 
 use gtk::signal;
 use gtk::widgets::*;
@@ -47,4 +48,22 @@ fn search(_: &Entry, store: &ListStore) {
         store.append(&mut iter);
         store.set_string(&iter, 0, &res.gurmukhi);
     }
+}
+
+fn create_fullscreen_window() {
+    let window = Window::new(gtk::WindowType::TopLevel).unwrap();
+
+    // This is needed for tiling window managers so the window can be positioned
+    window.set_type_hint(gdk::WindowTypeHint::Dialog);
+
+    window.show_all();
+    let gdk_window = window.get_window().unwrap();
+
+    // TODO: Move window to other display
+    // let screen = gdk_window.get_screen();
+    // let n = screen.get_n_monitors();
+    // let geometry = screen.get_monitor_geometry(0);
+
+    window.move_(0, 0);
+    gdk_window.fullscreen();
 }
