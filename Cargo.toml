@@ -19,7 +19,7 @@ rusqlite = "*"
 gdk = "*"
 
 [dependencies.pango]
-path = "../pango"
+git = "https://github.com/rust-gnome/pango"
 
 [dependencies.gtk]
 path = "../gtk"

@@ -32,7 +32,7 @@ fn init_gui() {
     let translation_label: Label = builder.get_object("translation").unwrap();
     let transliteration_label: Label = builder.get_object("transliteration").unwrap();
 
-    let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12").unwrap();
+    let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12");
     gurmukhi_label.override_font(&gurmukhi_font);
     translation_label.override_font(&gurmukhi_font);
     transliteration_label.override_font(&gurmukhi_font);
