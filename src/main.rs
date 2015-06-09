@@ -62,7 +62,7 @@ fn init_gui() {
 
 fn search(_: &Entry, store: &ListStore) {
     let conn = libgurbani::connect();
-    let params = QueryParams { scripture: Some(Scripture::SGGS), page: Some(1) };
+    let params = QueryParams::new().scripture(Scripture::SGGS).page(1);
     let results = libgurbani::query(&conn, params);
 
     let mut iter = gtk::TreeIter::new();
