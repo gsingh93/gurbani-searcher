@@ -43,7 +43,6 @@ fn init_gui() {
     let translation_label: Label = builder.get_object("translation").unwrap();
     let transliteration_label: Label = builder.get_object("transliteration").unwrap();
 
-
     let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12");
     gurmukhi_label.override_font(&gurmukhi_font);
     translation_label.override_font(&gurmukhi_font);
@@ -58,36 +57,60 @@ fn init_gui() {
         signal::Inhibit(true)
     });
 
+    {
+        let gurmukhi_label = gurmukhi_label.clone();
+        let translation_label = translation_label.clone();
+        let transliteration_label = transliteration_label.clone();
+        let gurmukhi1_label = gurmukhi1_label.clone();
+        let translation1_label = translation1_label.clone();
+        let transliteration1_label = transliteration1_label.clone();
+        shabad_lines.connect_row_activated(move |view: TreeView, path, _| {
+            let model = view.get_model().unwrap();
+            let mut iter = TreeIter::new();
+            if model.get_iter(&mut iter, &path) {
+                let s = model.get_value(&iter, 0);
+                gurmukhi_label.set_text(&s.get_string().unwrap());
+                translation_label.set_text(&s.get_string().unwrap());
+                transliteration_label.set_text(&s.get_string().unwrap());
+                gurmukhi1_label.set_text(&s.get_string().unwrap());
+                translation1_label.set_text(&s.get_string().unwrap());
+                transliteration1_label.set_text(&s.get_string().unwrap());
+            }
+        });
+    }
+
     let conn = Rc::new(DbConnection::connect());
-    let conn2 = conn.clone();
-    search_results.clone().connect_row_activated(move |view: TreeView, path, _| {
-        create_fullscreen_window(&fullscreen_window);
+    {
+        let conn = conn.clone();
+        search_results.clone().connect_row_activated(move |view: TreeView, path, _| {
+            create_fullscreen_window(&fullscreen_window);
 
-        container.remove(&search_results);
-        container.add(&slide);
+            container.remove(&search_results);
+            container.add(&slide);
 
-        let params = QueryParams::new().hymn(1);
-        let mut stmt = conn2.query(params);
-        let results = stmt.query();
-        let mut iter = TreeIter::new();
-        for res in results {
-            shabad_store.append(&mut iter);
-            shabad_store.set_string(&iter, 0, &res.gurmukhi());
-        }
-        container.add(&shabad_lines);
+            let params = QueryParams::new().hymn(1);
+            let mut stmt = conn.query(params);
+            let results = stmt.query();
+            let mut iter = TreeIter::new();
+            for res in results {
+                shabad_store.append(&mut iter);
+                shabad_store.set_string(&iter, 0, &res.gurmukhi());
+            }
+            container.add(&shabad_lines);
 
-        let model = view.get_model().unwrap();
-        let mut iter = TreeIter::new();
-        if model.get_iter(&mut iter, &path) {
-            let s = model.get_value(&iter, 0);
-            gurmukhi_label.set_text(&s.get_string().unwrap());
-            translation_label.set_text(&s.get_string().unwrap());
-            transliteration_label.set_text(&s.get_string().unwrap());
-            gurmukhi1_label.set_text(&s.get_string().unwrap());
-            translation1_label.set_text(&s.get_string().unwrap());
-            transliteration1_label.set_text(&s.get_string().unwrap());
-        }
-    });
+            let model = view.get_model().unwrap();
+            let mut iter = TreeIter::new();
+            if model.get_iter(&mut iter, &path) {
+                let s = model.get_value(&iter, 0);
+                gurmukhi_label.set_text(&s.get_string().unwrap());
+                translation_label.set_text(&s.get_string().unwrap());
+                transliteration_label.set_text(&s.get_string().unwrap());
+                gurmukhi1_label.set_text(&s.get_string().unwrap());
+                translation1_label.set_text(&s.get_string().unwrap());
+                transliteration1_label.set_text(&s.get_string().unwrap());
+            }
+        });
+    }
     search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
 
     window.show_all();
