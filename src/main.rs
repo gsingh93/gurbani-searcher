@@ -3,7 +3,7 @@ extern crate gtk;
 extern crate pango;
 extern crate libgurbani;
 
-use libgurbani::{QueryParams, Scripture};
+use libgurbani::{DbConnection, QueryParams, Scripture};
 use pango::FontDescription;
 
 use gtk::signal::{self, TreeViewSignals};
@@ -55,20 +55,20 @@ fn init_gui() {
             transliteration_label.set_text(&s.get_string().unwrap());
         }
     });
-    search_button.connect_clicked(move |_| search(&search_entry, &results_store));
+    let conn = DbConnection::connect();
+    search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
 
     window.show_all();
 }
 
-fn search(_: &Entry, store: &ListStore) {
-    let conn = libgurbani::connect();
+fn search<'conn>(conn: &DbConnection, _: &Entry, store: &ListStore) {
     let params = QueryParams::new().scripture(Scripture::SGGS).page(1);
-    let results = libgurbani::query(&conn, params);
-
+    let mut stmt = conn.query(params);
+    let results = stmt.query();
     let mut iter = gtk::TreeIter::new();
-    for res in results.iter() {
+    for res in results {
         store.append(&mut iter);
-        store.set_string(&iter, 0, &res.gurmukhi);
+        store.set_string(&iter, 0, &res.gurmukhi());
     }
 }
 

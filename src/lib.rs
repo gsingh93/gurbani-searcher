@@ -4,9 +4,10 @@ extern crate deuterium;
 use deuterium::{sql, TableDef, NamedField, SqlContext, ToIsPredicate, Selectable, Queryable,
                 QueryToSql};
 
-use rusqlite::SqliteConnection;
+use rusqlite::{SqliteConnection, SqliteRows, SqliteRow, SqliteStatement};
 use rusqlite::types::ToSql;
 
+use std::convert::From;
 use std::path::Path;
 
 const DB_PATH: &'static str = "resources/gurbani.db";
@@ -67,51 +68,129 @@ impl QueryParams {
 }
 
 #[derive(Debug)]
-pub struct QueryResult {
-    id: i32,
-    scripture: String,
-    page: i64,
-    line: i64,
-    hymn: i64,
+pub struct Record {
+    pub id: i32,
+    pub scripture: String,
+    pub page: i64,
+    pub line: i64,
+    pub hymn: i64,
     pub gurmukhi: String,
-    transliteration: String,
-    translation: String,
-    attributes: String,
-    gurmukhi_search: String,
-    transliteration_search: String
+    pub transliteration: String,
+    pub translation: String,
+    pub attributes: String,
+    pub gurmukhi_search: String,
+    pub transliteration_search: String
 }
 
-pub fn connect() -> SqliteConnection {
-    SqliteConnection::open(&Path::new(DB_PATH)).unwrap()
-}
+pub struct DbConnection(SqliteConnection);
 
-pub fn query(conn: &SqliteConnection, params: QueryParams) -> Vec<QueryResult> {
-    let (query, args) = construct_query(params);
-    let args_ref: Vec<_> = args.iter().map(|x| &**x as &ToSql).collect();
-    let mut stmt = conn.prepare(&query).unwrap();
-    let mut results: Vec<QueryResult> = vec!();
-    for row in stmt.query(&*args_ref).unwrap().map(|row| row.unwrap()) {
-        let translation: String = row.get(7);
-        let attributes: String = row.get(8);
-        let gurmukhi_search: String = row.get(9);
-        let transliteration_search: String = row.get(10);
-
-        let res = QueryResult {
-            id: row.get(0),
-            scripture: row.get(1),
-            page: row.get(2),
-            line: row.get(3),
-            hymn: row.get(4),
-            gurmukhi: row.get(5),
-            transliteration: row.get(6),
-            translation: translation,
-            attributes: attributes,
-            gurmukhi_search: gurmukhi_search,
-            transliteration_search: transliteration_search,
-        };
-        results.push(res);
+impl DbConnection {
+    pub fn connect() -> DbConnection {
+        DbConnection(SqliteConnection::open(&Path::new(DB_PATH)).unwrap())
     }
-    results
+
+    pub fn query<'a>(&'a self, params: QueryParams) -> Stmt<'a> {
+        let (sql, args) = construct_query(params);
+        let stmt = Stmt { stmt: self.0.prepare(&sql).unwrap(), args: args };
+        stmt
+    }
+}
+
+pub struct Stmt<'conn> {
+    stmt: SqliteStatement<'conn>,
+    args: Vec<Box<ToSql>>
+}
+
+impl<'conn> Stmt<'conn> {
+    pub fn query<'a>(&'a mut self) -> Rows<'a> {
+        let args_ref: Vec<_> = self.args.iter().map(|x| &**x as &ToSql).collect();
+        Rows { rows: self.stmt.query(&*args_ref).unwrap() }
+    }
+}
+
+pub struct Rows<'stmt> {
+    rows: SqliteRows<'stmt>
+}
+
+pub struct Row<'stmt> {
+    row: SqliteRow<'stmt>
+}
+
+impl<'stmt> Row<'stmt> {
+    pub fn to_record(&self) -> Record {
+        Record {
+            id: self.id(),
+            scripture: self.scripture(),
+            page: self.page(),
+            line: self.line(),
+            hymn: self.hymn(),
+            gurmukhi: self.gurmukhi(),
+            transliteration: self.transliteration(),
+            translation: self.translation(),
+            attributes: self.attributes(),
+            gurmukhi_search: self.gurmukhi_search(),
+            transliteration_search: self.transliteration_search(),
+        }
+    }
+
+    pub fn id(&self) -> i32 {
+        self.row.get_checked(0).unwrap()
+    }
+
+    pub fn scripture(&self) -> String {
+        self.row.get_checked(1).unwrap()
+    }
+
+    pub fn page(&self) -> i64 {
+        self.row.get_checked(2).unwrap()
+    }
+
+    pub fn line(&self) -> i64 {
+        self.row.get_checked(3).unwrap()
+    }
+
+    pub fn hymn(&self) -> i64 {
+        self.row.get_checked(4).unwrap()
+    }
+
+    pub fn gurmukhi(&self) -> String {
+        self.row.get_checked(5).unwrap()
+    }
+
+    pub fn transliteration(&self) -> String {
+        self.row.get_checked(6).unwrap()
+    }
+
+    pub fn translation(&self) -> String {
+        self.row.get_checked(7).unwrap()
+    }
+
+    pub fn attributes(&self) -> String {
+        self.row.get_checked(8).unwrap()
+    }
+
+    pub fn gurmukhi_search(&self) -> String {
+        self.row.get_checked(9).unwrap()
+    }
+
+    pub fn transliteration_search(&self) -> String {
+        self.row.get_checked(10).unwrap()
+    }
+
+}
+
+impl<'stmt> From<SqliteRow<'stmt>> for Row<'stmt> {
+    fn from(row: SqliteRow<'stmt>) -> Row<'stmt> {
+        Row { row: row }
+    }
+}
+
+impl<'stmt> Iterator for Rows<'stmt> {
+    type Item = Row<'stmt>;
+
+    fn next(&mut self) -> Option<Row<'stmt>> {
+        self.rows.next().map(|x| x.unwrap().into())
+    }
 }
 
 fn construct_query(params: QueryParams) -> (String, Vec<Box<ToSql>>) {
