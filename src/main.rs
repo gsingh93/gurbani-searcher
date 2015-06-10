@@ -3,6 +3,8 @@ extern crate gtk;
 extern crate pango;
 extern crate libgurbani;
 
+use std::rc::Rc;
+
 use libgurbani::{DbConnection, QueryParams, Scripture};
 use pango::FontDescription;
 
@@ -22,20 +24,33 @@ fn init_gui() {
     let builder = Builder::new_from_file(UI_FILE).unwrap();
 
     let window: Window = builder.get_object("window").unwrap();
+    let container: Box = builder.get_object("main_container").unwrap();
+
     let search_button: Button = builder.get_object("search_button").unwrap();
     let search_entry: Entry  = builder.get_object("search_entry").unwrap();
     let search_results: TreeView  = builder.get_object("search_results").unwrap();
     let results_store: ListStore = builder.get_object("search_results_store").unwrap();
 
+    let shabad_lines: TreeView = builder.get_object("shabad_lines").unwrap();
+    let shabad_store: ListStore = builder.get_object("shabad_store").unwrap();
+
     let fullscreen_window: Window = builder.get_object("fullscreen_window").unwrap();
+    let slide: Box = builder.get_object("slide").unwrap();
+    let gurmukhi1_label: Label = builder.get_object("gurmukhi1").unwrap();
+    let translation1_label: Label = builder.get_object("translation1").unwrap();
+    let transliteration1_label: Label = builder.get_object("transliteration1").unwrap();
     let gurmukhi_label: Label = builder.get_object("gurmukhi").unwrap();
     let translation_label: Label = builder.get_object("translation").unwrap();
     let transliteration_label: Label = builder.get_object("transliteration").unwrap();
+
 
     let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12");
     gurmukhi_label.override_font(&gurmukhi_font);
     translation_label.override_font(&gurmukhi_font);
     transliteration_label.override_font(&gurmukhi_font);
+    gurmukhi1_label.override_font(&gurmukhi_font);
+    translation1_label.override_font(&gurmukhi_font);
+    transliteration1_label.override_font(&gurmukhi_font);
     search_entry.override_font(&gurmukhi_font);
 
     window.connect_delete_event(|_, _| {
@@ -43,8 +58,23 @@ fn init_gui() {
         signal::Inhibit(true)
     });
 
-    search_results.connect_row_activated(move |view: TreeView, path, _| {
+    let conn = Rc::new(DbConnection::connect());
+    let conn2 = conn.clone();
+    search_results.clone().connect_row_activated(move |view: TreeView, path, _| {
         create_fullscreen_window(&fullscreen_window);
+
+        container.remove(&search_results);
+        container.add(&slide);
+
+        let params = QueryParams::new().hymn(1);
+        let mut stmt = conn2.query(params);
+        let results = stmt.query();
+        let mut iter = TreeIter::new();
+        for res in results {
+            shabad_store.append(&mut iter);
+            shabad_store.set_string(&iter, 0, &res.gurmukhi());
+        }
+        container.add(&shabad_lines);
 
         let model = view.get_model().unwrap();
         let mut iter = TreeIter::new();
@@ -53,9 +83,11 @@ fn init_gui() {
             gurmukhi_label.set_text(&s.get_string().unwrap());
             translation_label.set_text(&s.get_string().unwrap());
             transliteration_label.set_text(&s.get_string().unwrap());
+            gurmukhi1_label.set_text(&s.get_string().unwrap());
+            translation1_label.set_text(&s.get_string().unwrap());
+            transliteration1_label.set_text(&s.get_string().unwrap());
         }
     });
-    let conn = DbConnection::connect();
     search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
 
     window.show_all();
