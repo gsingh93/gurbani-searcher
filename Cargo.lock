@@ -4,6 +4,7 @@ version = "0.0.1"
 dependencies = [
  "deuterium 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "gdk 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "glib 0.0.2 (git+https://github.com/rust-gnome/glib)",
  "gtk 0.0.2",
  "pango 0.0.2 (git+https://github.com/rust-gnome/pango)",
  "rusqlite 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",

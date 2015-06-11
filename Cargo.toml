@@ -18,6 +18,9 @@ path = "src/main.rs"
 rusqlite = "*"
 gdk = "*"
 
+[dependencies.glib]
+git = "https://github.com/rust-gnome/glib"
+
 [dependencies.pango]
 git = "https://github.com/rust-gnome/pango"
 

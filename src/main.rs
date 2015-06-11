@@ -1,3 +1,4 @@
+extern crate glib;
 extern crate gdk;
 extern crate gtk;
 extern crate pango;
@@ -7,6 +8,8 @@ use std::rc::Rc;
 
 use libgurbani::{DbConnection, QueryParams, Scripture};
 use pango::FontDescription;
+
+use glib::{Value, Type};
 
 use gtk::signal::{self, TreeViewSignals};
 use gtk::widgets::*;
@@ -45,11 +48,7 @@ fn init_gui() {
 
     let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal 12");
     gurmukhi_label.override_font(&gurmukhi_font);
-    translation_label.override_font(&gurmukhi_font);
-    transliteration_label.override_font(&gurmukhi_font);
     gurmukhi1_label.override_font(&gurmukhi_font);
-    translation1_label.override_font(&gurmukhi_font);
-    transliteration1_label.override_font(&gurmukhi_font);
     search_entry.override_font(&gurmukhi_font);
 
     window.connect_delete_event(|_, _| {
@@ -68,13 +67,16 @@ fn init_gui() {
             let model = view.get_model().unwrap();
             let mut iter = TreeIter::new();
             if model.get_iter(&mut iter, &path) {
-                let s = model.get_value(&iter, 0);
-                gurmukhi_label.set_text(&s.get_string().unwrap());
-                translation_label.set_text(&s.get_string().unwrap());
-                transliteration_label.set_text(&s.get_string().unwrap());
-                gurmukhi1_label.set_text(&s.get_string().unwrap());
-                translation1_label.set_text(&s.get_string().unwrap());
-                transliteration1_label.set_text(&s.get_string().unwrap());
+                let gurmukhi = model.get_value(&iter, 0);
+                let transliteration = model.get_value(&iter, 1);
+                let translation = model.get_value(&iter, 2);
+
+                gurmukhi_label.set_text(&gurmukhi.get_string().unwrap());
+                translation_label.set_text(&translation.get_string().unwrap());
+                transliteration_label.set_text(&transliteration.get_string().unwrap());
+                gurmukhi1_label.set_text(&gurmukhi.get_string().unwrap());
+                translation1_label.set_text(&translation.get_string().unwrap());
+                transliteration1_label.set_text(&transliteration.get_string().unwrap());
             }
         });
     }
@@ -88,27 +90,38 @@ fn init_gui() {
             container.remove(&search_results);
             container.add(&slide);
 
-            let params = QueryParams::new().hymn(1);
+            let model = view.get_model().unwrap();
+            let mut iter = TreeIter::new();
+            let (hymn, line) = if model.get_iter(&mut iter, &path) {
+                (model.get_value(&iter, 1).get::<i64>() as i16, model.get_value(&iter, 2).get())
+            } else {
+                unreachable!()
+            };
+
+            let params = QueryParams::new().hymn(hymn);
             let mut stmt = conn.query(params);
             let results = stmt.query();
             let mut iter = TreeIter::new();
             for res in results {
                 shabad_store.append(&mut iter);
-                shabad_store.set_string(&iter, 0, &res.gurmukhi());
+                let gurmukhi = res.gurmukhi();
+                let transliteration = res.transliteration();
+                let translation = res.translation();
+
+                shabad_store.set_string(&iter, 0, &gurmukhi);
+                shabad_store.set_string(&iter, 1, &transliteration);
+                shabad_store.set_string(&iter, 2, &translation);
+
+                if res.line() == line {
+                    gurmukhi_label.set_text(&gurmukhi);
+                    translation_label.set_text(&translation);
+                    transliteration_label.set_text(&transliteration);
+                    gurmukhi1_label.set_text(&gurmukhi);
+                    translation1_label.set_text(&translation);
+                    transliteration1_label.set_text(&transliteration);
+                }
             }
             container.add(&shabad_lines);
-
-            let model = view.get_model().unwrap();
-            let mut iter = TreeIter::new();
-            if model.get_iter(&mut iter, &path) {
-                let s = model.get_value(&iter, 0);
-                gurmukhi_label.set_text(&s.get_string().unwrap());
-                translation_label.set_text(&s.get_string().unwrap());
-                transliteration_label.set_text(&s.get_string().unwrap());
-                gurmukhi1_label.set_text(&s.get_string().unwrap());
-                translation1_label.set_text(&s.get_string().unwrap());
-                transliteration1_label.set_text(&s.get_string().unwrap());
-            }
         });
     }
     search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
@@ -124,6 +137,16 @@ fn search<'conn>(conn: &DbConnection, _: &Entry, store: &ListStore) {
     for res in results {
         store.append(&mut iter);
         store.set_string(&iter, 0, &res.gurmukhi());
+
+        let mut hymn_num = Value::new();
+        hymn_num.init(Type::I64);
+        hymn_num.set(&res.hymn());
+        store.set_value(&iter, 1, &hymn_num);
+
+        let mut line_num = Value::new();
+        line_num.init(Type::I64);
+        line_num.set(&res.line());
+        store.set_value(&iter, 2, &line_num);
     }
 }
 

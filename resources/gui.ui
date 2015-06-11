@@ -62,8 +62,12 @@
   </object>
   <object class="GtkListStore" id="search_results_store">
     <columns>
-      <!-- column-name Text -->
+      <!-- column-name Line -->
       <column type="gchararray"/>
+      <!-- column-name ShabadNumber -->
+      <column type="gint64"/>
+      <!-- column-name LineNumber -->
+      <column type="gint64"/>
     </columns>
   </object>
   <object class="GtkWindow" id="window">
@@ -172,7 +176,11 @@
   </object>
   <object class="GtkListStore" id="shabad_store">
     <columns>
-      <!-- column-name Line -->
+      <!-- column-name Gurmukhi -->
+      <column type="gchararray"/>
+      <!-- column-name Transliteration -->
+      <column type="gchararray"/>
+      <!-- column-name Translation -->
       <column type="gchararray"/>
     </columns>
   </object>
