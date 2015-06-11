@@ -1,13 +1,15 @@
 extern crate rusqlite;
 extern crate deuterium;
 
-use deuterium::{sql, TableDef, NamedField, SqlContext, ToIsPredicate, Selectable, Queryable,
-                QueryToSql};
+#[macro_use]
+extern crate log;
+
+use deuterium::*;
 
 use rusqlite::{SqliteConnection, SqliteRows, SqliteRow, SqliteStatement};
-use rusqlite::types::ToSql;
+use rusqlite::types::ToSql as ToSqlite;
 
-use std::convert::From;
+use std::convert::From as StdFrom;
 use std::path::Path;
 
 const DB_PATH: &'static str = "resources/gurbani.db";
@@ -91,6 +93,7 @@ impl DbConnection {
 
     pub fn query<'a>(&'a self, params: QueryParams) -> Stmt<'a> {
         let (sql, args) = construct_query(params);
+        debug!("{}", sql);
         let stmt = Stmt { stmt: self.0.prepare(&sql).unwrap(), args: args };
         stmt
     }
@@ -98,12 +101,12 @@ impl DbConnection {
 
 pub struct Stmt<'conn> {
     stmt: SqliteStatement<'conn>,
-    args: Vec<Box<ToSql>>
+    args: Vec<Box<ToSqlite>>
 }
 
 impl<'conn> Stmt<'conn> {
     pub fn query<'a>(&'a mut self) -> Rows<'a> {
-        let args_ref: Vec<_> = self.args.iter().map(|x| &**x as &ToSql).collect();
+        let args_ref: Vec<_> = self.args.iter().map(|x| &**x as &ToSqlite).collect();
         Rows { rows: self.stmt.query(&*args_ref).unwrap() }
     }
 }
@@ -179,7 +182,7 @@ impl<'stmt> Row<'stmt> {
 
 }
 
-impl<'stmt> From<SqliteRow<'stmt>> for Row<'stmt> {
+impl<'stmt> StdFrom<SqliteRow<'stmt>> for Row<'stmt> {
     fn from(row: SqliteRow<'stmt>) -> Row<'stmt> {
         Row { row: row }
     }
@@ -193,10 +196,10 @@ impl<'stmt> Iterator for Rows<'stmt> {
     }
 }
 
-fn construct_query(params: QueryParams) -> (String, Vec<Box<ToSql>>) {
+fn construct_query(params: QueryParams) -> (String, Vec<Box<ToSqlite>>) {
     let table = TableDef::new(TABLE_NAME);
 
-    let mut args: Vec<Box<ToSql>> = vec!();
+    let mut args: Vec<Box<ToSqlite>> = vec!();
     let mut query = table.select_all();
 
     if let Some(ref scripture) = params.scripture {
@@ -216,14 +219,18 @@ fn construct_query(params: QueryParams) -> (String, Vec<Box<ToSql>>) {
     }
     if let Some(ref gurmukhi) = params.gurmukhi {
         let gurmukhi_column = NamedField::<String>::field_of("gurmukhi_search", &table);
-        query = query.where_(gurmukhi_column.is(gurmukhi.to_owned()));
-        args.push(Box::new(gurmukhi.to_owned()));
+        let mut gurmukhi = gurmukhi.to_owned();
+        gurmukhi.push('%');
+        query = query.where_(gurmukhi_column.like(gurmukhi.clone()));
+        args.push(Box::new(gurmukhi));
     }
     if let Some(ref transliteration) = params.transliteration {
         let transliteration_column = NamedField::<String>::field_of("transliteration_search",
                                                                     &table);
-        query = query.where_(transliteration_column.is(transliteration.to_owned()));
-        args.push(Box::new(transliteration.to_owned()));
+        let mut transliteration = transliteration.to_owned();
+        transliteration.push('%');
+        query = query.where_(transliteration_column.is(transliteration.clone()));
+        args.push(Box::new(transliteration));
     }
 
     let mut context = SqlContext::new(Box::new(sql::PostgreSqlAdapter));

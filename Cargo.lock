@@ -3,9 +3,12 @@ name = "gurbani-searcher"
 version = "0.0.1"
 dependencies = [
  "deuterium 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "env_logger 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "gdk 0.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "glib 0.0.2 (git+https://github.com/rust-gnome/glib)",
  "gtk 0.0.2",
+ "gtk-sys 0.1.1",
+ "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
  "pango 0.0.2 (git+https://github.com/rust-gnome/pango)",
  "rusqlite 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
@@ -68,6 +71,15 @@ dependencies = [
  "rustc-serialize 0.3.14 (registry+https://github.com/rust-lang/crates.io-index)",
  "time 0.1.25 (registry+https://github.com/rust-lang/crates.io-index)",
  "uuid 0.1.17 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "env_logger"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "log 0.3.1 (registry+https://github.com/rust-lang/crates.io-index)",
+ "regex 0.1.33 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
@@ -202,6 +214,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "log"
+version = "0.3.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "libc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "pango"
 version = "0.0.2"
 source = "git+https://github.com/rust-gnome/pango#24f38575f2afaa771fcf342471906e8d49bc9b6e"
@@ -233,6 +253,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "libc 0.1.7 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
+
+[[package]]
+name = "regex"
+version = "0.1.33"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+dependencies = [
+ "regex-syntax 0.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "regex-syntax"
+version = "0.1.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
 
 [[package]]
 name = "rusqlite"

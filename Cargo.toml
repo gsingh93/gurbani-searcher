@@ -17,6 +17,8 @@ path = "src/main.rs"
 [dependencies]
 rusqlite = "*"
 gdk = "*"
+log = "*"
+env_logger = "*"
 
 [dependencies.glib]
 git = "https://github.com/rust-gnome/glib"
@@ -28,6 +30,9 @@ git = "https://github.com/rust-gnome/pango"
 path = "../gtk"
 version = "*"
 features = ["gtk_3_14"]
+
+[dependencies.gtk-sys]
+path = "../gtk"
 
 [dependencies.deuterium]
 version = "*"
