@@ -68,8 +68,8 @@ fn init_gui() {
                                                  800) };
 
     let slide_box: Box = builder.get_object("slide").unwrap();
-    let shabad_lines_scroll_window: ScrolledWindow =
-        builder.get_object("shabad_lines_scroll_window").unwrap();
+    let sidebar: Box = builder.get_object("sidebar").unwrap();
+    let back_button: Button = builder.get_object("back").unwrap();
 
     let gurmukhi_font = FontDescription::from_string("gurbaniwebthick normal");
 
@@ -93,6 +93,21 @@ fn init_gui() {
     });
 
     {
+        let results_scroll_window = results_scroll_window.clone();
+        let slide_box = slide_box.clone();
+        let sidebar = sidebar.clone();
+        let container = container.clone();
+        let shabad_store = shabad_store.clone();
+        back_button.connect_clicked(move |_| {
+            container.remove(&slide_box);
+            container.remove(&sidebar);
+            shabad_store.clear();
+            container.add(&results_scroll_window);
+        });
+    }
+
+    // Handle changing the line of a shabad
+    {
         let slide = slide.clone();
         let slide_fullscreen = slide_fullscreen.clone();
         shabad_lines.connect_row_activated(move |view: TreeView, path, _| {
@@ -113,6 +128,7 @@ fn init_gui() {
         });
     }
 
+    // Handle selecting a search result
     let conn = Rc::new(DbConnection::connect());
     {
         let conn = conn.clone();
@@ -150,7 +166,7 @@ fn init_gui() {
                     slide_fullscreen.set_text(&gurmukhi, &translation, &transliteration);
                 }
             }
-            container.add(&shabad_lines_scroll_window);
+            container.pack_start(&sidebar, true, true, 0);
         });
     }
     search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
@@ -159,6 +175,7 @@ fn init_gui() {
 }
 
 fn search<'conn>(conn: &DbConnection, search_entry: &Entry, store: &ListStore) {
+    store.clear();
     let text = search_entry.get_text().unwrap();
     if text == "" {
         return;
@@ -167,7 +184,7 @@ fn search<'conn>(conn: &DbConnection, search_entry: &Entry, store: &ListStore) {
     let params = QueryParams::new().scripture(Scripture::SGGS).gurmukhi(text);
     let mut stmt = conn.query(params);
     let results = stmt.query();
-    let mut iter = gtk::TreeIter::new();
+    let mut iter = TreeIter::new();
     for res in results {
         store.append(&mut iter);
         store.set_string(&iter, 0, &res.gurmukhi());

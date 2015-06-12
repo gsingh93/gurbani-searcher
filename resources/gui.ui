@@ -142,6 +142,7 @@
           <object class="GtkScrolledWindow" id="search_results_scroll_window">
             <property name="visible">True</property>
             <property name="can_focus">True</property>
+            <property name="vexpand">True</property>
             <property name="shadow_type">in</property>
             <child>
               <object class="GtkTreeView" id="search_results">
@@ -191,36 +192,61 @@
       <column type="gchararray"/>
     </columns>
   </object>
-  <object class="GtkScrolledWindow" id="shabad_lines_scroll_window">
+  <object class="GtkBox" id="sidebar">
     <property name="visible">True</property>
-    <property name="can_focus">True</property>
-    <property name="vexpand">True</property>
-    <property name="shadow_type">in</property>
+    <property name="can_focus">False</property>
+    <property name="orientation">vertical</property>
     <child>
-      <object class="GtkTreeView" id="shabad_lines">
+      <object class="GtkScrolledWindow" id="shabad_lines_scroll_window">
         <property name="visible">True</property>
         <property name="can_focus">True</property>
-        <property name="model">shabad_store</property>
-        <property name="headers_visible">False</property>
-        <property name="activate_on_single_click">True</property>
-        <child internal-child="selection">
-          <object class="GtkTreeSelection" id="treeview-selection4"/>
-        </child>
+        <property name="vexpand">True</property>
+        <property name="shadow_type">in</property>
         <child>
-          <object class="GtkTreeViewColumn" id="treeviewcolumn2">
-            <property name="title" translatable="yes">column</property>
+          <object class="GtkTreeView" id="shabad_lines">
+            <property name="visible">True</property>
+            <property name="can_focus">True</property>
+            <property name="model">shabad_store</property>
+            <property name="headers_visible">False</property>
+            <property name="activate_on_single_click">True</property>
+            <child internal-child="selection">
+              <object class="GtkTreeSelection" id="treeview-selection4"/>
+            </child>
             <child>
-              <object class="GtkCellRendererText" id="cellrenderertext3">
-                <property name="family">gurbaniwebthick</property>
-                <property name="wrap_mode">word</property>
+              <object class="GtkTreeViewColumn" id="treeviewcolumn2">
+                <property name="title" translatable="yes">column</property>
+                <child>
+                  <object class="GtkCellRendererText" id="cellrenderertext3">
+                    <property name="family">gurbaniwebthick</property>
+                    <property name="wrap_mode">word</property>
+                  </object>
+                  <attributes>
+                    <attribute name="text">0</attribute>
+                  </attributes>
+                </child>
               </object>
-              <attributes>
-                <attribute name="text">0</attribute>
-              </attributes>
             </child>
           </object>
         </child>
       </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">0</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkButton" id="back">
+        <property name="label" translatable="yes">Back</property>
+        <property name="visible">True</property>
+        <property name="can_focus">True</property>
+        <property name="receives_default">True</property>
+      </object>
+      <packing>
+        <property name="expand">False</property>
+        <property name="fill">True</property>
+        <property name="position">1</property>
+      </packing>
     </child>
   </object>
   <object class="GtkBox" id="slide">
