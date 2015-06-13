@@ -13,7 +13,7 @@ use pango::FontDescription;
 
 use glib::{Value, Type};
 
-use gtk::signal::{self, TreeViewSignals};
+use gtk::signal::{self, TreeViewSignals, EntrySignals};
 use gtk::widgets::*;
 use gtk::traits::*;
 
@@ -168,6 +168,12 @@ fn init_gui() {
             }
             container.pack_start(&sidebar, true, true, 0);
         });
+    }
+    {
+        let conn = conn.clone();
+        let search_entry = search_entry.clone();
+        let results_store = results_store.clone();
+        search_entry.clone().connect_activate(move |_| search(&conn, &search_entry, &results_store));
     }
     search_button.connect_clicked(move |_| search(&conn, &search_entry, &results_store));
 
