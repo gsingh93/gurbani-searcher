@@ -63,9 +63,9 @@ fn init_gui() {
 
     let fullscreen_window: Window = builder.get_object("fullscreen_window").unwrap();
     let provider = CssProvider::load_from_path("resources/theme.css");
-    unsafe { ffi::gtk_style_context_add_provider(fullscreen_window.get_style_context(),
-                                                 provider.pointer,
-                                                 800) };
+    unsafe { ffi::gtk_style_context_add_provider_for_screen(ffi::gtk_widget_get_screen(fullscreen_window.unwrap_widget()),
+                                                            provider.pointer,
+                                                            800) };
 
     let slide_box: Box = builder.get_object("slide").unwrap();
     let sidebar: Box = builder.get_object("sidebar").unwrap();

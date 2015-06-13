@@ -12,6 +12,7 @@
         <property name="homogeneous">True</property>
         <child>
           <object class="GtkLabel" id="gurmukhi1">
+            <property name="name">gurmukhi</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Gurmukhi</property>
@@ -24,6 +25,7 @@
         </child>
         <child>
           <object class="GtkLabel" id="translation1">
+            <property name="name">translation</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Translation</property>
@@ -36,6 +38,7 @@
         </child>
         <child>
           <object class="GtkLabel" id="transliteration1">
+            <property name="name">transliteration</property>
             <property name="visible">True</property>
             <property name="can_focus">False</property>
             <property name="label" translatable="yes">Transliteration</property>

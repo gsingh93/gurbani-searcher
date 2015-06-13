@@ -1,19 +1,14 @@
 extern crate rusqlite;
-extern crate deuterium;
 
 #[macro_use]
 extern crate log;
 
-use deuterium::*;
-
 use rusqlite::{SqliteConnection, SqliteRows, SqliteRow, SqliteStatement};
-use rusqlite::types::ToSql as ToSqlite;
 
-use std::convert::From as StdFrom;
+use std::convert::From;
 use std::path::Path;
 
 const DB_PATH: &'static str = "resources/gurbani.db";
-const TABLE_NAME: &'static str = "scriptures";
 
 #[derive(Debug)]
 pub enum Scripture {
@@ -92,22 +87,20 @@ impl DbConnection {
     }
 
     pub fn query<'a>(&'a self, params: QueryParams) -> Stmt<'a> {
-        let (sql, args) = construct_query(params);
+        let sql = construct_query(params);
         debug!("{}", sql);
-        let stmt = Stmt { stmt: self.0.prepare(&sql).unwrap(), args: args };
+        let stmt = Stmt { stmt: self.0.prepare(&sql).unwrap() };
         stmt
     }
 }
 
 pub struct Stmt<'conn> {
     stmt: SqliteStatement<'conn>,
-    args: Vec<Box<ToSqlite>>
 }
 
 impl<'conn> Stmt<'conn> {
     pub fn query<'a>(&'a mut self) -> Rows<'a> {
-        let args_ref: Vec<_> = self.args.iter().map(|x| &**x as &ToSqlite).collect();
-        Rows { rows: self.stmt.query(&*args_ref).unwrap() }
+        Rows { rows: self.stmt.query(&[]).unwrap() }
     }
 }
 
@@ -182,7 +175,7 @@ impl<'stmt> Row<'stmt> {
 
 }
 
-impl<'stmt> StdFrom<SqliteRow<'stmt>> for Row<'stmt> {
+impl<'stmt> From<SqliteRow<'stmt>> for Row<'stmt> {
     fn from(row: SqliteRow<'stmt>) -> Row<'stmt> {
         Row { row: row }
     }
@@ -196,43 +189,64 @@ impl<'stmt> Iterator for Rows<'stmt> {
     }
 }
 
-fn construct_query(params: QueryParams) -> (String, Vec<Box<ToSqlite>>) {
-    let table = TableDef::new(TABLE_NAME);
+fn construct_query(params: QueryParams) -> String {
+    let mut first = true;
 
-    let mut args: Vec<Box<ToSqlite>> = vec!();
-    let mut query = table.select_all();
+    let mut sql = "SELECT * FROM scriptures".to_string();
 
-    if let Some(ref scripture) = params.scripture {
-        let scripture_column = NamedField::<String>::field_of("scripture", &table);
-        query = query.where_(scripture_column.is(scripture.name().to_string()));
-        args.push(Box::new(scripture.name()));
+    let QueryParams { scripture, page, hymn, gurmukhi, transliteration } = params;
+    if let Some(scripture) = scripture {
+        if first {
+            first = false;
+            sql.push_str(" WHERE ");
+        } else {
+            sql.push_str(" AND ");
+        }
+        sql.push_str(&format!("(scripture = '{}')", scripture.name()));
     }
-    if let Some(page) = params.page {
-        let page_column = NamedField::<i16>::field_of("page", &table);
-        query = query.where_(page_column.is(page));
-        args.push(Box::new(page as i64));
+    if let Some(page) = page {
+        if first {
+            first = false;
+            sql.push_str(" WHERE ");
+        } else {
+            sql.push_str(" AND ");
+        }
+        sql.push_str(&format!("(page = {})", page));
     }
-    if let Some(hymn) = params.hymn {
-        let hymn_column = NamedField::<i16>::field_of("hymn", &table);
-        query = query.where_(hymn_column.is(hymn));
-        args.push(Box::new(hymn as i64));
+    if let Some(hymn) = hymn {
+        if first {
+            first = false;
+            sql.push_str(" WHERE ");
+        } else {
+            sql.push_str(" AND ");
+        }
+        sql.push_str(&format!("(hymn = {})", hymn));
     }
-    if let Some(ref gurmukhi) = params.gurmukhi {
-        let gurmukhi_column = NamedField::<String>::field_of("gurmukhi_search", &table);
-        let mut gurmukhi = gurmukhi.to_owned();
-        gurmukhi.push('%');
-        query = query.where_(gurmukhi_column.like(gurmukhi.clone()));
-        args.push(Box::new(gurmukhi));
+    if let Some(gurmukhi) = gurmukhi {
+        if first {
+            first = false;
+            sql.push_str(" WHERE ");
+        } else {
+            sql.push_str(" AND ");
+        }
+
+        let s = format!("(gurmukhi_search LIKE '{}%') ORDER BY length(gurmukhi_search) ASC",
+                        gurmukhi);
+        sql.push_str(&s);
     }
-    if let Some(ref transliteration) = params.transliteration {
-        let transliteration_column = NamedField::<String>::field_of("transliteration_search",
-                                                                    &table);
-        let mut transliteration = transliteration.to_owned();
-        transliteration.push('%');
-        query = query.where_(transliteration_column.is(transliteration.clone()));
-        args.push(Box::new(transliteration));
+    if let Some(transliteration) = transliteration {
+        if first {
+            // FIXME: Unused assignment
+            first = false;
+            sql.push_str(" WHERE ");
+        } else {
+            sql.push_str(" AND ");
+        }
+
+        let s = format!("(transliteration_search LIKE '{}%') ORDER BY length(transliteration_search) ASC ",
+                        transliteration);
+        sql.push_str(&s);
     }
 
-    let mut context = SqlContext::new(Box::new(sql::PostgreSqlAdapter));
-    (query.to_final_sql(&mut context), args)
+    sql
 }

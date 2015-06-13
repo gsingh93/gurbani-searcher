@@ -33,7 +33,3 @@ features = ["gtk_3_14"]
 
 [dependencies.gtk-sys]
 path = "../gtk"
-
-[dependencies.deuterium]
-version = "*"
-default-features = false
